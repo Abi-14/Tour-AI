@@ -12,11 +12,19 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^16.0.0",
-    "express": "^4.18.2",
-    "openai": "^4.8.0"
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "openai": "^4.104.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abi-14/Tour-AI.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Abi-14/Tour-AI/issues"
+  },
+  "homepage": "https://github.com/Abi-14/Tour-AI#readme"
 }
