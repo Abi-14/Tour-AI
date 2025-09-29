@@ -1,0 +1,30 @@
+{
+  "name": "tour-ai",
+  "version": "1.0.0",
+  "description": "Mood-based itinerary generator using OpenAI",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "openai": "^4.104.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abi-14/Tour-AI.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Abi-14/Tour-AI/issues"
+  },
+  "homepage": "https://github.com/Abi-14/Tour-AI#readme"
+}
