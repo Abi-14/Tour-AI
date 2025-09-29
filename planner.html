@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Travel Planner</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif; /* Unified font */
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+      color: #333;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 600px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin: 12px 0 6px;
+      font-weight: bold;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-family: inherit; /* Ensures same font for all inputs */
+      font-size: 14px;
+    }
+
+    .transport-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 15px 0;
+    }
+
+    .transport-option {
+      padding: 15px;
+      text-align: center;
+      background: #f0f0f0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+      border: 2px solid transparent;
+      font-weight: bold;
+    }
+
+    .transport-option:hover {
+      background: #e0e0e0;
+    }
+
+    .transport-option.active {
+      border: 2px solid #007bff;
+      background: #dbeafe;
+      color: #007bff;
+    }
+
+    .finish-btn {
+      width: 100%;
+      padding: 12px;
+      background: #007bff;
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+
+    .finish-btn:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Travel Planner</h2>
+
+    <!-- New Inputs -->
+    <label for="from">Where you're travelling from:</label>
+    <input type="text" id="from" placeholder="Enter your starting location">
+
+    <label for="destination">Destination:</label>
+    <input type="text" id="destination" placeholder="Enter your destination">
+
+    <!-- Dates Section -->
+    <label for="start-date">Start Date:</label>
+    <input type="date" id="start-date">
+
+    <label for="end-date">End Date:</label>
+    <input type="date" id="end-date">
+
+    <!-- Transport Section -->
+    <label>Transport:</label>
+    <div class="transport-options">
+      <div class="transport-option" onclick="selectTransport(this)">Car</div>
+      <div class="transport-option" onclick="selectTransport(this)">Bike</div>
+      <div class="transport-option" onclick="selectTransport(this)">Flight + Public Transport</div>
+      <div class="transport-option" onclick="selectTransport(this)">Flight + Rent a Vehicle (Car/Bike)</div>
+    </div>
+
+    <!-- Budget Section -->
+    <label for="currency">Budget Currency:</label>
+    <select id="currency">
+      <option value="USD">USD - US Dollar</option>
+      <option value="EUR">EUR - Euro</option>
+      <option value="GBP">GBP - British Pound</option>
+      <option value="JPY">JPY - Japanese Yen</option>
+      <option value="INR">INR - Indian National Rupees</option> <!-- Added -->
+    </select>
+
+    <label for="budget">Budget Amount:</label>
+    <input type="number" id="budget" placeholder="Enter your budget">
+
+    <!-- Finish Button -->
+   <a href="trips.html">
+  <button class="finish-btn">Finish</button>
+</a>
+
+  <script>
+    function selectTransport(selected) {
+      const options = document.querySelectorAll('.transport-option');
+      options.forEach(option => option.classList.remove('active'));
+      selected.classList.add('active');
+    }
+  </script>
+</body>
+</html>
