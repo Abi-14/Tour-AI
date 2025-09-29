@@ -95,6 +95,7 @@
       font-size: 18px;
       cursor: pointer;
       transition: 0.3s;
+      margin: 10px;
     }
 
     .hero button:hover {
@@ -125,6 +126,8 @@
       <li><button id="planBtn">Plan Trip</button></li>
       <li><button id="tripsBtn">My Trips</button></li>
       <li><button id="expensesBtn">Expenses</button></li>
+      <li><button id="healthBtn">Health & Safety</button></li>
+      <li><button id="eventsBtn">Events Nearby</button></li> <!-- ✅ NEW ORANGE BUTTON -->
     </ul>
   </nav>
 
@@ -133,6 +136,7 @@
     <h1>Plan Your Perfect <span>Adventure</span></h1>
     <p>Your all-in-one travel companion that finds the best deals, splits your budget intelligently, and guarantees prices within your range. Travel smarter, not harder.</p>
     <button id="mainPlanBtn">✈ Plan Your Trip →</button>
+    
   </section>
 
   <!-- Features -->
@@ -156,11 +160,18 @@
     document.getElementById("expensesBtn").onclick = () => {
       window.location.href = "expenses.html";
     };
+    document.getElementById("healthBtn").onclick = () => {
+      window.location.href = "health.html";
+    };
+    document.getElementById("eventsBtn").onclick = () => {
+      window.location.href = "cult.html"; // ✅ Navbar Events button
+    };
     document.getElementById("mainPlanBtn").onclick = () => {
       window.location.href = "planner.html";
+    };
+    document.getElementById("heroEventsBtn").onclick = () => {
+      window.location.href = "cult.html"; // ✅ Hero Events button
     };
   </script>
 </body>
 </html>
-
-

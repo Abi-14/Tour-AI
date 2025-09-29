@@ -1,0 +1,36 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+h1 { margin: 6px 0 12px 0; text-align:center; }
+
+#controls { margin-bottom: 8px; }
+button {
+  padding: 10px 14px;
+  margin-right: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+#map {
+  height: 60vh;
+  width: 95%;
+  max-width: 1000px;
+  border: 1px solid #ccc;
+  margin-bottom: 12px;
+}
+
+#info {
+  width: 95%;
+  max-width: 1000px;
+  text-align: left;
+}
+
+#placesList { list-style: none; padding-left: 0; }
+#placesList li { padding: 6px 0; border-bottom: 1px solid #eee; }
+.small { font-size: 0.9rem; color: #555; }

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Health & Safety — Panic Demo (Advanced)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <style>
+    body { font-family: Arial, sans-serif; margin:0; padding:12px; text-align:center; }
+    #top { max-width:1000px; margin:0 auto; }
+    #map { height:55vh; width:95%; margin:10px auto; border:1px solid #ddd; }
+    button, input { padding:10px 12px; margin:6px; font-size:15px;}
+    #placesList { text-align:left; display:inline-block; max-width:95%; padding-left:18px; margin-top:8px;}
+    li { margin-bottom:6px; }
+    label { display:inline-block; margin-right:6px; font-weight:600; }
+    .small { font-size:0.9rem; color:#555; }
+    .controls { margin-bottom:8px; }
+    #emergencyContacts { display:block; margin:6px auto; max-width:95%; text-align:left; }
+  </style>
+</head>
+<body>
+  <div id="top">
+    <h1>Health & Safety — Panic Demo 🏥</h1>
+
+    <div class="controls">
+      <label for="name">Name:</label>
+      <input id="name" placeholder="Your name" />
+      <label for="age">Age:</label>
+      <input id="age" placeholder="Age" style="width:60px" />
+      <button id="panicBtn">🚨 PANIC — Send My Info</button>
+      <button id="refreshBtn">🔄 Refresh Nearby Places</button>
+    </div>
+
+    <div class="controls">
+      <h3>Emergency Contacts</h3>
+      <textarea id="emergencyContacts" placeholder="Enter one per line: Name,Phone/Email"></textarea>
+      <button id="saveContacts">💾 Save Contacts</button>
+    </div>
+
+    <div id="map"></div>
+
+    <h3>Nearby Places</h3>
+    <ul id="placesList"><li>Loading...</li></ul>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+/* ===============================
+   Advanced Panic Demo — Browser Only
+   =============================== */
+let map, userMarker, userLatLng;
+let nearbyPlaces = []; 
+const placesListEl = document.getElementById('placesList');
+const nameEl = document.getElementById('name');
+const ageEl = document.getElementById('age');
+const contactsEl = document.getElementById('emergencyContacts');
+
+initMap();
+loadContacts();
+detectLocationAndShow();
+
+// ------------- Map -----------------
+function initMap(){
+  map = L.map('map').setView([20.5937,78.9629],5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+}
+
+// ------------- Location & Nearby Places ---------------
+function detectLocationAndShow(){
+  placesListEl.innerHTML = '<li>Detecting location...</li>';
+  if(!navigator.geolocation){
+    alert('Geolocation not supported.');
+    placesListEl.innerHTML = '<li>Geolocation not supported.</li>';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(async (pos)=>{
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+    userLatLng = {lat, lon};
+    if(userMarker) map.removeLayer(userMarker);
+    userMarker = L.marker([lat, lon]).addTo(map).bindPopup('You are here').openPopup();
+    map.setView([lat, lon], 15);
+    await findNearbyPlaces(lat, lon);
+  }, (err)=>{
+    console.error(err);
+    alert('Cannot get location. Allow location access.');
+    placesListEl.innerHTML = '<li>Location permission denied.</li>';
+  }, { enableHighAccuracy:true, timeout:10000, maximumAge:0 });
+}
+
+// Overpass API query
+async function queryOverpass(lat, lon, radius=3000, types=['hospital','clinic','pharmacy']){
+  const typeFilters = types.map(t =>
+    `node(around:${radius},${lat},${lon})[amenity=${t}];
+     way(around:${radius},${lat},${lon})[amenity=${t}];
+     relation(around:${radius},${lat},${lon})[amenity=${t}];`
+  ).join('');
+
+  const q = `[out:json][timeout:25];(${typeFilters});out center tags;`;
+  const url = 'https://overpass-api.de/api/interpreter';
+  try{
+    const resp = await fetch(url, { method:'POST', body:q });
+    const data = await resp.json();
+    const places = (data.elements || []).map(el => {
+      const latp = el.lat || (el.center && el.center.lat);
+      const lonp = el.lon || (el.center && el.center.lon);
+      const tags = el.tags || {};
+      const phone = tags.phone || tags['contact:phone'] || null;
+      const email = tags.email || tags['contact:email'] || null;
+      const addr = tags['addr:full'] || tags['addr:street'] || null;
+      return {id:el.id, name:tags.name||'Unknown', type:tags.amenity||'place', lat:latp, lon:lonp, phone, email, address:addr};
+    }).filter(p => p.lat && p.lon);
+    return places;
+  }catch(e){
+    console.error('Overpass error', e);
+    return [];
+  }
+}
+
+function distanceMeters(lat1, lon1, lat2, lon2){
+  const R = 6371000;
+  const toRad = x => x*Math.PI/180;
+  const dLat = toRad(lat2-lat1);
+  const dLon = toRad(lon2-lon1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R*c;
+}
+
+function findNearestPlace(user, places){
+  if(!places || places.length===0) return null;
+  let best=null, bestDist=Infinity;
+  places.forEach(p=>{
+    const d = distanceMeters(user.lat,user.lon,p.lat,p.lon);
+    if(d<bestDist){ bestDist=d; best={...p,distance_m:Math.round(d)}; }
+  });
+  return best;
+}
+
+async function findNearbyPlaces(lat, lon){
+  placesListEl.innerHTML = '<li>Searching nearby hospitals/pharmacies...</li>';
+  nearbyPlaces = await queryOverpass(lat, lon);
+  map.eachLayer(layer=>{if(layer instanceof L.Marker && layer!==userMarker) map.removeLayer(layer);});
+  if(!nearbyPlaces.length){ placesListEl.innerHTML='<li>No nearby places found.</li>'; return; }
+  nearbyPlaces.sort((a,b)=>distanceMeters(lat,lon,a.lat,a.lon)-distanceMeters(lat,lon,b.lat,b.lon));
+  placesListEl.innerHTML='';
+  nearbyPlaces.forEach((p, idx)=>{
+    const dist = Math.round(distanceMeters(lat,lon,p.lat,p.lon));
+    const marker = L.marker([p.lat,p.lon]).addTo(map);
+    marker.bindPopup(`<b>${p.name}</b><br>${p.type}<br>${dist} m away<br>${p.phone ? 'Phone: '+p.phone : ''}`);
+    const li = document.createElement('li');
+    li.innerHTML = `<b>${p.name}</b> (${p.type}) - ${dist} m ${p.phone ? '<span class="small">Phone: '+p.phone+'</span>' : ''}`;
+    placesListEl.appendChild(li);
+    if(idx===0) marker.openPopup();
+  });
+}
+
+// ------------- Emergency Contacts -----------------
+function saveContacts(){
+  const text = contactsEl.value.trim();
+  if(!text){ localStorage.removeItem('emergencyContacts'); alert('Contacts cleared.'); return; }
+  localStorage.setItem('emergencyContacts', text);
+  alert('Contacts saved locally in browser.');
+}
+function loadContacts(){
+  const saved = localStorage.getItem('emergencyContacts');
+  if(saved) contactsEl.value = saved;
+}
+document.getElementById('saveContacts').addEventListener('click', saveContacts);
+
+// ------------- Panic Flow ----------------
+function estimateAmbulanceMinutes(distance_m){ return Math.max(1, Math.round(distance_m/1000*2)); }
+
+function sanitizePhone(phone){
+  if(!phone) return null;
+  return phone.replace(/[()\s-]/g,'').replace(/\D/g,'');
+}
+
+async function handleSendToHospital(place){
+  if(!userLatLng) return alert('No location detected.');
+  const userName = (nameEl.value||'Unknown').trim();
+  const userAge = (ageEl.value||'Unknown').trim();
+  const nearest = place || findNearestPlace(userLatLng, nearbyPlaces);
+  const dist = nearest ? Math.round(distanceMeters(userLatLng.lat,userLatLng.lon,nearest.lat,nearest.lon)) : null;
+  const eta = dist ? estimateAmbulanceMinutes(dist) : null;
+
+  let msg = `EMERGENCY ALERT
+Name: ${userName}
+Age: ${userAge}
+Location: ${userLatLng.lat.toFixed(6)},${userLatLng.lon.toFixed(6)}
+`;
+  if(nearest) msg += `Nearest hospital: ${nearest.name} (${nearest.type})
+Distance: ${dist} m
+ETA ambulance: ${eta} min
+`;
+
+  // Confirm with user
+  if(!confirm('You are about to send your emergency info. Continue?')) return;
+
+  
+  if(nearest && nearest.phone){
+    const sanitized = sanitizePhone(nearest.phone);
+    if(sanitized){
+      const waUrl = `https://wa.me/${sanitized}?text=${encodeURIComponent(msg)}`;
+      if(confirm(`Hospital phone found: ${nearest.phone}\nPress OK to open WhatsApp Web, Cancel to try call.`)){
+        window.open(waUrl,'_blank'); return;
+      } else if(confirm('Call hospital instead?')){
+        window.location.href = `tel:${nearest.phone}`; return;
+      }
+    }
+  }
+
+  
+  if(nearest && nearest.email){
+    const mailto = `mailto:${nearest.email}?subject=${encodeURIComponent('Emergency Alert')}&body=${encodeURIComponent(msg)}`;
+    if(confirm(`Hospital email found: ${nearest.email}\nPress OK to open your email client to send.`)){
+      window.location.href = mailto; return;
+    }
+  }
+
+  // Clipboard fallback
+  try {
+    await navigator.clipboard.writeText(msg);
+    if(navigator.share){
+      if(confirm('Message copied. Press OK to open native share dialog.')) navigator.share({title:'Emergency Alert', text:msg});
+      else alert('Message copied. Paste it in a message to your contacts.');
+    } else alert('Message copied. Paste it in a message to your contacts.');
+  } catch(e){
+    alert('Could not copy. Manual copy needed:\n\n'+msg);
+  }
+}
+
+document.getElementById('panicBtn').addEventListener('click',()=>handleSendToHospital());
+
+// Refresh button
+document.getElementById('refreshBtn').addEventListener('click',()=>{
+  if(userLatLng) findNearbyPlaces(userLatLng.lat,userLatLng.lon);
+  else detectLocationAndShow();
+});
+  </script>
+</body>
+</html>
